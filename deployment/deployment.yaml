@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dtt-bot
+  namespace: ponche
+spec:
+  selector:
+    matchLabels:
+      project: dtt-bot
+  template:
+    metadata:
+      labels:
+        project: dtt-bot
+    spec:
+      containers:
+        - name: dtt-bot-image
+          image: poncheska/dtt-bot:latest
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 3
