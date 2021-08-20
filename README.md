@@ -1,0 +1,1 @@
+# Discord timetable bot
