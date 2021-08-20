@@ -2,8 +2,8 @@ FROM golang:alpine as builder
 
 RUN apk update && apk upgrade && apk add --no-cache git
 
-RUN mkdir /app
-WORKDIR /app
+RUN mkdir -p /github.com/poncheska/discord-timetable
+WORKDIR /github.com/poncheska/discord-timetable
 
 ENV GO111MODULE=on
 
@@ -19,6 +19,6 @@ RUN apk --no-cache add ca-certificates
 
 RUN mkdir /app
 WORKDIR /app
-COPY --from=builder /app/app .
+COPY --from=builder /github.com/poncheska/discord-timetable/app .
 
 CMD ["./app"]
