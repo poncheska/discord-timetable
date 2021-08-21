@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/poncheska/discord-timetable/internal/utils"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"math/rand"
 	"strconv"
@@ -12,19 +13,36 @@ import (
 )
 
 type Bot struct {
-	dg     *discordgo.Session
-	ttLink string
+	dg       *discordgo.Session
+	ttLink   string
+	ttSpamID string
 }
 
-func NewBot(dg *discordgo.Session, ttLink string) *Bot {
+func NewBot(dg *discordgo.Session, ttLink string, ttSpamID string) *Bot {
 	return &Bot{
-		dg:     dg,
-		ttLink: ttLink,
+		dg:       dg,
+		ttLink:   ttLink,
+		ttSpamID: ttSpamID,
 	}
 }
 
 func (b *Bot) ConfigureAndOpen() error {
 	b.dg.AddHandler(b.TTHandler)
+
+	if b.ttSpamID != "" {
+		c := cron.New()
+		_,err := c.AddFunc("0 13 * * SUN",func() {
+			sendTT(b.dg, b.ttLink, b.ttSpamID)
+			logrus.Info("cron timetable spam")
+		})
+		if err != nil{
+			logrus.Error(err)
+		}else{
+			c.Start()
+			logrus.Info("cron started: " + time.Now().String())
+		}
+	}
+
 	return b.dg.Open()
 }
 
@@ -37,37 +55,19 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	logrus.Info(m.ChannelID)
+
 	cmd := strings.Split(strings.TrimSpace(m.Content), " ")
 	if len(cmd) == 0 {
 		return
 	}
 
 	if cmd[0] == "!tt" {
-		var tt *utils.Timetable
-		var err error
-
 		if len(cmd) > 1 {
-			tt, err = utils.ParseTimetable(cmd[1])
-			if err != nil {
-				_, err = s.ChannelMessageSend(m.ChannelID, "error")
-				if err != nil {
-					logrus.Error(err)
-				}
-			} else {
-				sendTTByDays(s, tt, m.ChannelID)
-			}
+			sendTT(s, cmd[1], m.ChannelID)
 			return
 		}
-
-		tt, err = utils.ParseTimetable(b.ttLink)
-		if err != nil {
-			_, err = s.ChannelMessageSend(m.ChannelID, "error")
-			if err != nil {
-				logrus.Error(err)
-			}
-		} else {
-			sendTTByDays(s, tt, m.ChannelID)
-		}
+		sendTT(s, b.ttLink, m.ChannelID)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 		min, err := strconv.Atoi(cmd[1])
-		if err != nil{
+		if err != nil {
 			_, err := s.ChannelMessageSend(m.ChannelID, `"/r min max"`)
 			if err != nil {
 				logrus.Error(err)
@@ -88,7 +88,7 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 		max, err := strconv.Atoi(cmd[2])
-		if err != nil{
+		if err != nil {
 			_, err := s.ChannelMessageSend(m.ChannelID, `"/r min max"`)
 			if err != nil {
 				logrus.Error(err)
@@ -115,14 +115,26 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func sendTTByDays(s *discordgo.Session, tt *utils.Timetable, ChID string){
+func sendTTByDays(s *discordgo.Session, tt *utils.Timetable, ChID string) {
 	for _, d := range tt.Days {
-		strings := d.GetString()
-		for _, str := range strings {
+		ss := d.GetString()
+		for _, str := range ss {
 			_, err := s.ChannelMessageSend(ChID, str)
 			if err != nil {
 				logrus.Error(err)
 			}
 		}
+	}
+}
+
+func sendTT(s *discordgo.Session, ttLink string, spamID string) {
+	tt, err := utils.ParseTimetable(ttLink)
+	if err != nil {
+		_, err = s.ChannelMessageSend(spamID, "error")
+		if err != nil {
+			logrus.Error(err)
+		}
+	} else {
+		sendTTByDays(s, tt, spamID)
 	}
 }

@@ -18,12 +18,14 @@ func Start(){
 	if ttLink == ""{
 		logrus.Fatal("no timetable link configured")
 	}
+	ttSpamID := os.Getenv("TT_SPAM")
+
 	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	b := bot.NewBot(dg, ttLink)
+	b := bot.NewBot(dg, ttLink, ttSpamID)
 
 	err = b.ConfigureAndOpen()
 	if err != nil {
