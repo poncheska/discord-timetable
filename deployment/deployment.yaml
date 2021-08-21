@@ -31,8 +31,6 @@ spec:
                 configMapKeyRef:
                   name: bot-config
                   key: tt_spam
-          ports:
-            - containerPort: 8080
           livenessProbe:
             httpGet:
               path: /status

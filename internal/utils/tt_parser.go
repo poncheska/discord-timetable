@@ -8,6 +8,7 @@ import (
 	"github.com/gocolly/colly"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 var regexNotSpace = regexp.MustCompile("(\\S+\\s?)+[^\\s]")
@@ -77,7 +78,7 @@ func (d Day) GetString() []string {
 	res := make([]string, 0, 0)
 	buf := bytes.NewBuffer([]byte{})
 	counter := 0
-	buf.WriteString("__***" + d.Date + "***__\n")
+	buf.WriteString("__***" + strings.ToUpper(d.Date) + "***__\n")
 	for _, les := range d.Lessons {
 		if counter == 5 {
 			res = append(res, buf.String())
