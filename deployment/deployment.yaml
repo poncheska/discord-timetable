@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: dtt-bot
-  namespace: ponche
+  namespace: ponche-sb
 spec:
   selector:
     matchLabels:
@@ -15,6 +15,22 @@ spec:
       containers:
         - name: dtt-bot-image
           image: poncheska/dtt-bot:latest
+          env:
+            - name: BOT_TOKEN
+              valueFrom:
+                configMapKeyRef:
+                  name: bot-config
+                  key: bot_token
+            - name: TT_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: bot-config
+                  key: tt_link
+            - name: TT_SPAM
+              valueFrom:
+                configMapKeyRef:
+                  name: bot-config
+                  key: tt_spam
           ports:
             - containerPort: 8080
           livenessProbe:
