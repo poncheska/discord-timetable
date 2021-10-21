@@ -1,11 +1,13 @@
 package bot
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/poncheska/discord-timetable/internal/utils"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
+	"github.com/skip2/go-qrcode"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -31,13 +33,13 @@ func (b *Bot) ConfigureAndOpen() error {
 
 	if b.ttSpamID != "" {
 		c := cron.New()
-		_,err := c.AddFunc("0 13 * * SUN",func() {
+		_, err := c.AddFunc("0 13 * * SUN", func() {
 			sendTT(b.dg, b.ttLink, b.ttSpamID)
 			logrus.Info("cron timetable spam")
 		})
-		if err != nil{
+		if err != nil {
 			logrus.Error(err)
-		}else{
+		} else {
 			c.Start()
 			logrus.Info("cron started: " + time.Now().String())
 		}
@@ -112,6 +114,22 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			logrus.Error(err)
 		}
 		return
+	}
+
+	if cmd[0] == "!qr" {
+		if len(cmd) < 2 {
+			_, err := s.ChannelMessageSend(m.ChannelID, `"empty"`)
+			if err != nil {
+				logrus.Error(err)
+			}
+			return
+		}
+		file, err := qrcode.Encode(strings.Join(cmd[1:], " "), qrcode.Medium, 512)
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, `"encoding error"`)
+			logrus.Error(err)
+		}
+		s.ChannelFileSend(m.ChannelID, "qr.png", bytes.NewBuffer(file))
 	}
 }
 
