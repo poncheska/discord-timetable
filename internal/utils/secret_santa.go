@@ -12,7 +12,8 @@ import (
 const SSMan = `__***Инструкция к боту "Тайный Санта":***__
 *Каждый участник должен писать боту в ЛС. Бот идентифицирует всех по id чата(то есть права организатора будут только в том чате, в котором создана игра).*
 ***"!ss new"*** - создать новую игру, будет выслан GAME_ID (организатор не является участником игры автоматически)
-***"!ss join <GAME_ID> <YOUR_NAME>"*** - вступить в созданную игру по GAME_ID, YOUR_NAME - твоё имя
+***"!ss info <GAME_ID>"*** - получить список участников тайного санты по GAME_ID
+***"!ss join <GAME_ID> <YOUR_NAME>"*** - вступить в созданную игру по GAME_ID, YOUR_NAME - твоё имя (если вызвать будучи уже зарегистрированным имя обновится)
 ***"!ss start <GAME_ID>"*** - начать игру (доступно только организатору), после старт все данные об игре удаляются.
 ***"!ss delete <GAME_ID>"*** - удалить игру (доступно только организатору)
 `
@@ -84,8 +85,13 @@ func (s *SecretSanta) StartGame(callerId string, gameId string) (map[string]stri
 func (g *Game) NewMember(memId string, memName string) error {
 	g.mx.Lock()
 	defer g.mx.Unlock()
-	if _, ok := g.Members[memId]; ok {
-		return errors.New("Ты уже участвуешь в этом тайном санте.")
+	if oldName, ok := g.Members[memId]; ok {
+		if oldName == memName {
+			return errors.New("Ты уже участвуешь в этом тайном санте.")
+		} else {
+			g.Members[memId] = memName
+			return errors.New(fmt.Sprintf("Твоё имя в этом тайном санте было заменено на %v", memName))
+		}
 	}
 	g.Members[memId] = memName
 	return nil

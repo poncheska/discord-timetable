@@ -144,6 +144,22 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		switch cmd[1] {
 		case "info":
+			if len(cmd) == 3 {
+				gameId := cmd[2]
+				if _, ok := b.ss.Games[gameId]; !ok {
+					_, err := s.ChannelMessageSend(m.ChannelID, "Игры с таким id не существует")
+					if err != nil {
+						logrus.Error(err)
+					}
+					return
+				}
+				gInfo := b.ss.Games[gameId].GetMembersStr(gameId)
+				_, err := s.ChannelMessageSend(m.ChannelID, gInfo)
+				if err != nil {
+					logrus.Error(err)
+				}
+				return
+			}
 			_, err := s.ChannelMessageSend(m.ChannelID, utils.SSMan)
 			if err != nil {
 				logrus.Error(err)
@@ -167,7 +183,7 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 			gameId := cmd[2]
 			memName := strings.Join(cmd[3:], " ")
-			if _,ok := b.ss.Games[gameId]; !ok {
+			if _, ok := b.ss.Games[gameId]; !ok {
 				_, err := s.ChannelMessageSend(m.ChannelID, "Игры с таким id не существует")
 				if err != nil {
 					logrus.Error(err)
@@ -196,7 +212,7 @@ func (b *Bot) TTHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 			gameId := cmd[2]
-			if _,ok := b.ss.Games[gameId]; !ok {
+			if _, ok := b.ss.Games[gameId]; !ok {
 				_, err := s.ChannelMessageSend(m.ChannelID, "Игры с таким id не существует")
 				if err != nil {
 					logrus.Error(err)
